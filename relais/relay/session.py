@@ -59,6 +59,10 @@ CONSIGNE_RELAIS = (
     "c'est la seule chose qu'il lira."
 )
 
+# Plus grand message que le SDK accepte de Claude Code. Son défaut (1 Mo) tue la session au premier
+# gros résultat d'outil — image lue, longue sortie de tests (éprouvé : « exceeded maximum buffer size »).
+TAMPON_MAX = 64 * 1024 * 1024
+
 FabriqueClient = Callable[[ClaudeAgentOptions], Any]
 
 
@@ -195,6 +199,7 @@ class Session:
             can_use_tool=self._decider,
             # Les fichiers joints y sont déposés : Claude doit pouvoir les lire hors du projet.
             add_dirs=[str(dossier_pieces())],
+            max_buffer_size=TAMPON_MAX,
             setting_sources=["user", "project", "local"],
             system_prompt={"type": "preset", "preset": "claude_code", "append": CONSIGNE_RELAIS},
         )
