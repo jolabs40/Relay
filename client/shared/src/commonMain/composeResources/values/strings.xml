@@ -7,7 +7,7 @@
     <string name="deconnecte">Relay unreachable</string>
     <string name="deconnecte_raison">Relay unreachable: %1$s</string>
     <string name="non_connecte">Not connected to the relay</string>
-    <string name="relais_ancien">The relay runs an older version and ignores attachments. Restart it: tray icon, “Stop the relay”, then reopen Relay. Open sessions can be resumed afterwards.</string>
+    <string name="relais_ancien">The relay runs an older version: it ignores attachments and doesn't report progress. Restart it: tray icon, “Stop the relay”, then reopen Relay. Open sessions can be resumed afterwards.</string>
     <string name="erreur_relais">Relay: %1$s</string>
 
     <!-- Liste des sessions -->
@@ -80,6 +80,32 @@
     <string name="resultat_titre">Summary</string>
     <string name="resultat_erreur">Ended with an error</string>
     <string name="details_tour">%1$s · %2$d steps</string>
+    <string name="repondu_a">Answered at %1$s</string>
+    <string name="bilan_lignes">+%1$d −%2$d lines</string>
+    <plurals name="bilan_modifies">
+        <item quantity="one">%1$d file changed</item>
+        <item quantity="other">%1$d files changed</item>
+    </plurals>
+    <plurals name="bilan_crees">
+        <item quantity="one">%1$d created</item>
+        <item quantity="other">%1$d created</item>
+    </plurals>
+    <plurals name="bilan_tests_ecrits">
+        <item quantity="one">%1$d test written</item>
+        <item quantity="other">%1$d tests written</item>
+    </plurals>
+    <plurals name="bilan_tests_lances">
+        <item quantity="one">tests run once</item>
+        <item quantity="other">tests run %1$d times</item>
+    </plurals>
+    <plurals name="bilan_echecs">
+        <item quantity="one">%1$d failed</item>
+        <item quantity="other">%1$d failed</item>
+    </plurals>
+    <plurals name="bilan_actions">
+        <item quantity="one">%1$d action</item>
+        <item quantity="other">%1$d actions</item>
+    </plurals>
     <string name="envoyer_reponse">Send</string>
     <string name="copier">Copy</string>
 

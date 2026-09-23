@@ -41,7 +41,8 @@ from .session import MODES, ErreurCommande, FabriqueClient, Session
 log = logging.getLogger("relay.serveur")
 
 # 2 : pièces jointes (``pieces`` dans ``nouvelle`` et ``envoyer``).
-VERSION_PROTOCOLE = 2
+# 3 : suivi du travail (``tour`` dans la session, ``debut`` et ``bilan`` dans ``resultat``).
+VERSION_PROTOCOLE = 3
 
 
 class Relais:

@@ -63,6 +63,11 @@ import net.jolabs40.relay.ressources.sans_titre
 import net.jolabs40.relay.ressources.session_arretee
 import net.jolabs40.relay.ui.cartes.ActionsCartes
 import net.jolabs40.relay.ui.cartes.CarteEvenement
+import net.jolabs40.relay.ui.cartes.LigneBilan
+import net.jolabs40.relay.ui.duree
+import kotlinx.coroutines.delay
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 import net.jolabs40.relay.ui.couleurEtat
 import net.jolabs40.relay.ui.libelleEtat
 import net.jolabs40.relay.ui.libelleMode
@@ -158,31 +163,55 @@ private fun BarreActivite(session: SessionRelais, interrompre: () -> Unit) {
         else -> null
     } ?: return
     Surface(color = MaterialTheme.colorScheme.surfaceContainer) {
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            if (occupe) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
-            Text(
-                message,
-                style = MaterialTheme.typography.bodySmall,
-                color = couleurEtat(session.etat),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
-            )
-            if (session.enFile > 0) {
-                Text(stringResource(Res.string.en_file, session.enFile), style = MaterialTheme.typography.labelSmall)
-            }
-            if (occupe || session.etat == SessionRelais.ATTENTE) {
-                OutlinedButton(onClick = interrompre, contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)) {
-                    Icon(painterResource(Res.drawable.baseline_stop_24), null, Modifier.size(16.dp))
-                    Text(stringResource(Res.string.interrompre), Modifier.padding(start = 6.dp))
+        Column {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                if (occupe) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                Text(
+                    message,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = couleurEtat(session.etat),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                val tour = session.tour
+                if (occupe && tour != null && tour.debut > 0) Chrono(tour.debut)
+                if (session.enFile > 0) {
+                    Text(stringResource(Res.string.en_file, session.enFile), style = MaterialTheme.typography.labelSmall)
+                }
+                if (occupe || session.etat == SessionRelais.ATTENTE) {
+                    OutlinedButton(onClick = interrompre, contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)) {
+                        Icon(painterResource(Res.drawable.baseline_stop_24), null, Modifier.size(16.dp))
+                        Text(stringResource(Res.string.interrompre), Modifier.padding(start = 6.dp))
+                    }
                 }
             }
+            // Les chiffres du tour, sous l'activité : de quoi voir que ça avance sans rien lire.
+            session.tour?.let { LigneBilan(it.bilan, Modifier.padding(start = 46.dp, end = 20.dp, bottom = 8.dp)) }
         }
     }
+}
+
+/** Le temps écoulé depuis le début du tour, rafraîchi chaque seconde. */
+@OptIn(ExperimentalTime::class)
+@Composable
+private fun Chrono(debut: Long) {
+    var maintenant by remember { mutableStateOf(Clock.System.now().toEpochMilliseconds()) }
+    LaunchedEffect(debut) {
+        while (true) {
+            maintenant = Clock.System.now().toEpochMilliseconds()
+            delay(1000)
+        }
+    }
+    Text(
+        duree((maintenant - debut).coerceAtLeast(0)),
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 @Composable

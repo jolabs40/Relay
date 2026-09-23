@@ -18,8 +18,8 @@ import kotlinx.serialization.json.putJsonObject
  * questions gardent le camelCase de l'outil AskUserQuestion, qu'elles recopient telles quelles.
  */
 
-/** 2 : pièces jointes. Un relais plus ancien les ignorerait sans rien dire. */
-const val VERSION_PROTOCOLE = 2
+/** 2 : pièces jointes. 3 : suivi du travail (bilan du tour). Un relais plus ancien ignorerait l'une et n'enverrait pas l'autre. */
+const val VERSION_PROTOCOLE = 3
 
 val jsonRelais = Json {
     ignoreUnknownKeys = true
@@ -58,6 +58,23 @@ data class PieceAffichee(
 /** Les formats d'image que Claude lit directement (API Messages). */
 val TYPES_IMAGE = setOf("image/png", "image/jpeg", "image/gif", "image/webp")
 
+/** Ce qu'un tour a fait, en chiffres : de quoi voir que Claude avance, sans rien lire. */
+@Serializable
+data class Bilan(
+    @SerialName("fichiers_modifies") val fichiersModifies: Int = 0,
+    @SerialName("fichiers_crees") val fichiersCrees: Int = 0,
+    @SerialName("lignes_ajoutees") val lignesAjoutees: Int = 0,
+    @SerialName("lignes_retirees") val lignesRetirees: Int = 0,
+    @SerialName("tests_ecrits") val testsEcrits: Int = 0,
+    @SerialName("tests_lances") val testsLances: Int = 0,
+    @SerialName("tests_echoues") val testsEchoues: Int = 0,
+    val actions: Int = 0,
+)
+
+/** Le tour en cours : son début (horloge du relais) et son bilan provisoire. */
+@Serializable
+data class Tour(val debut: Long = 0, val bilan: Bilan = Bilan())
+
 @Serializable
 data class OptionQuestion(val label: String, val description: String = "")
 
@@ -87,6 +104,9 @@ data class Evenement(
     @SerialName("duree_ms") val dureeMs: Long? = null,
     @SerialName("cout_usd") val coutUsd: Double? = null,
     val tours: Int? = null,
+    /** Résultat : début du tour qu'il conclut, et ce que ce tour a fait. */
+    val debut: Long? = null,
+    val bilan: Bilan? = null,
     val reponse: JsonObject? = null,
     val pieces: List<PieceAffichee> = emptyList(),
 ) {
@@ -113,6 +133,8 @@ data class SessionRelais(
     @SerialName("en_file") val enFile: Int = 0,
     @SerialName("cree_a") val creeA: Long = 0,
     @SerialName("maj_a") val majA: Long = 0,
+    /** Présent tant que Claude travaille. */
+    val tour: Tour? = null,
     val evenements: List<Evenement> = emptyList(),
 ) {
     val demandeEnAttente: Evenement? get() = evenements.lastOrNull { it.enAttente }

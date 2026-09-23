@@ -34,6 +34,24 @@ class ProtocoleTest {
     }
 
     @Test
+    fun `le tour en cours et le bilan du resultat se decodent`() {
+        val bilan = """{"fichiers_modifies": 3, "fichiers_crees": 1, "lignes_ajoutees": 120, "lignes_retirees": 14,
+            "tests_ecrits": 2, "tests_lances": 1, "tests_echoues": 0, "actions": 12}"""
+        val brut = """
+            {"type": "session", "session": {"id": "t", "projet": "P", "cwd": "C:/x", "etat": "travaille", "mode": "default",
+             "tour": {"debut": 1000, "bilan": $bilan}, "evenements": [
+               {"id": 1, "type": "resultat", "horodatage": 5000, "texte": "Fini", "debut": 1000, "bilan": $bilan}]}}
+        """.trimIndent()
+        val s = (decoderMessage(brut) as MessageRelais.Session).session
+        assertEquals(1000L, s.tour?.debut)
+        assertEquals(120, s.tour?.bilan?.lignesAjoutees)
+        assertEquals(s.tour?.bilan, s.evenements[0].bilan)
+        assertEquals(1000L, s.evenements[0].debut)
+        // Un relais v2 n'envoie ni l'un ni l'autre.
+        assertEquals(null, (decoderMessage(session) as MessageRelais.Session).session.tour)
+    }
+
+    @Test
     fun `seules les demandes et les comptes rendus nouveaux alertent`() {
         val avant = (decoderMessage(session) as MessageRelais.Session).session
         val apres = avant.copy(

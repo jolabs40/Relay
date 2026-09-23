@@ -51,10 +51,14 @@ class PlancheEcransTest {
          "modes":["default","acceptEdits","plan","bypassPermissions"],"sessions":[]}
     """.trimIndent()
 
-    private fun session(id: String, projet: String, titre: String, etat: String, mode: String, activite: String, evenements: String) =
+    private fun session(id: String, projet: String, titre: String, etat: String, mode: String, activite: String, evenements: String, tour: String = "null") =
         """{"type":"session","session":{"id":"$id","projet":"$projet","cwd":"C:/S/$projet","titre":"$titre",
             "etat":"$etat","mode":"$mode","activite":"$activite","claude_session_id":"x","en_file":0,
-            "cree_a":1,"maj_a":${id.hashCode().toLong() and 0xffff},"evenements":[$evenements]}}"""
+            "cree_a":1,"maj_a":${id.hashCode().toLong() and 0xffff},"tour":$tour,"evenements":[$evenements]}}"""
+
+    /** Il y a [minutes] minutes : les heures du fil tombent aujourd'hui, donc sans date. */
+    private val maintenant = System.currentTimeMillis()
+    private fun ilYa(minutes: Double) = maintenant - (minutes * 60_000).toLong()
 
     private val question = session(
         "q", "MeepleTV", "Ajouter un mode équipe au Mot Juste", "attente", "bypassPermissions", "",
@@ -75,7 +79,7 @@ class PlancheEcransTest {
         "p", "BookVoice", "Nettoyer les builds", "attente", "default", "",
         """
         {"id":1,"type":"prompt","texte":"Nettoie les dossiers de build et relance les tests."},
-        {"id":2,"type":"permission","demande":"d2","en_attente":false,"outil":"Bash","resume":"Bash ./gradlew clean","detail":"./gradlew clean","reponse":{"autoriser":true}},
+        {"id":2,"type":"permission","horodatage":${ilYa(3.0)},"demande":"d2","en_attente":false,"outil":"Bash","resume":"Bash ./gradlew clean","detail":"./gradlew clean","reponse":{"autoriser":true}},
         {"id":3,"type":"permission","demande":"d3","en_attente":true,"outil":"Bash","resume":"Bash Supprime le cache Gradle","detail":"rm -rf ~/.gradle/caches/transforms-4\n./gradlew test --no-daemon"}
         """,
     )
@@ -91,17 +95,20 @@ class PlancheEcransTest {
     private val resultat = session(
         "r", "TVSlim Suite/TVSlim", "Corriger le crash au démarrage", "inactive", "acceptEdits", "",
         """
-        {"id":1,"type":"prompt","texte":"L'app plante au démarrage sur l'émulateur, trouve et corrige."},
-        {"id":2,"type":"question","demande":"d5","en_attente":false,"questions":[{"question":"Corriger aussi la version TV ?","header":"Portée","multiSelect":false,"options":[{"label":"Oui"},{"label":"Non"}]}],"reponse":{"reponses":{"Corriger aussi la version TV ?":"Oui"}}},
-        {"id":3,"type":"resultat","texte":"**Corrigé.** Le crash venait de `removeFirst()` appelé sur API 34 dans `JournalRepository.kt:118`.\n\n- Remplacé par `removeAt(0)` dans les deux applications.\n- Build `assembleDebug` : OK. Tests `:core:test` : 212 passés.\n\nRien n'est commité.","erreur":false,"duree_ms":187000,"cout_usd":0.41,"tours":14},
-        {"id":4,"type":"prompt","texte":"Commit, en français."},
-        {"id":5,"type":"info","texte":"Interrompu"}
+        {"id":1,"type":"prompt","horodatage":${ilYa(9.0)},"texte":"L'app plante au démarrage sur l'émulateur, trouve et corrige."},
+        {"id":2,"type":"question","horodatage":${ilYa(8.0)},"demande":"d5","en_attente":false,"questions":[{"question":"Corriger aussi la version TV ?","header":"Portée","multiSelect":false,"options":[{"label":"Oui"},{"label":"Non"}]}],"reponse":{"reponses":{"Corriger aussi la version TV ?":"Oui"}}},
+        {"id":3,"type":"resultat","texte":"**Corrigé.** Le crash venait de `removeFirst()` appelé sur API 34 dans `JournalRepository.kt:118`.\n\n- Remplacé par `removeAt(0)` dans les deux applications.\n- Build `assembleDebug` : OK. Tests `:core:test` : 212 passés.\n\nRien n'est commité.","erreur":false,"duree_ms":187000,"cout_usd":0.41,"tours":14,
+         "horodatage":${ilYa(5.9)},"debut":${ilYa(9.0)},
+         "bilan":{"fichiers_modifies":4,"fichiers_crees":1,"lignes_ajoutees":86,"lignes_retirees":23,"tests_ecrits":3,"tests_lances":2,"tests_echoues":1,"actions":27}},
+        {"id":4,"type":"prompt","horodatage":${ilYa(2.0)},"texte":"Commit, en français."},
+        {"id":5,"type":"info","horodatage":${ilYa(1.5)},"texte":"Interrompu"}
         """,
     )
 
     private val travail = session(
         "t", "Projets", "Audit des CLAUDE.md", "travaille", "bypassPermissions", "Read BookVoice/CLAUDE.md",
-        """{"id":1,"type":"prompt","texte":"Audite tous les CLAUDE.md des sous-projets."}""",
+        """{"id":1,"type":"prompt","horodatage":${ilYa(4.3)},"texte":"Audite tous les CLAUDE.md des sous-projets."}""",
+        tour = """{"debut":${ilYa(4.3)},"bilan":{"fichiers_modifies":7,"fichiers_crees":2,"lignes_ajoutees":214,"lignes_retirees":58,"tests_ecrits":0,"tests_lances":1,"tests_echoues":0,"actions":41}}""",
     )
 
     @Test

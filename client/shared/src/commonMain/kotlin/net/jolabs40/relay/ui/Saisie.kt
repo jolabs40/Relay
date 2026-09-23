@@ -21,3 +21,6 @@ fun Modifier.toucheEnvoi(envoyer: () -> Unit): Modifier = onPreviewKeyEvent { ev
 
 /** « 23/09 14:05 » dans le fuseau de l'appareil. */
 expect fun dateCourte(millis: Long): String
+
+/** « 14:05 » pour aujourd'hui, « 22/09 14:05 » au-delà : l'heure d'un élément du fil. */
+expect fun heure(millis: Long): String

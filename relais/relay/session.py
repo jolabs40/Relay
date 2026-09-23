@@ -31,7 +31,9 @@ from claude_agent_sdk import (
     ResultMessage,
     SystemMessage,
     TextBlock,
+    ToolResultBlock,
     ToolUseBlock,
+    UserMessage,
 )
 from claude_agent_sdk.types import (
     PermissionResultAllow,
@@ -40,6 +42,7 @@ from claude_agent_sdk.types import (
     ToolPermissionContext,
 )
 
+from .bilan import Bilan
 from .pieces import Pieces, dossier_pieces, preparer
 
 log = logging.getLogger("relay.session")
@@ -138,6 +141,9 @@ class Session:
         self._dernier_texte = ""
         self._compteur = 0
         self._occupe = False
+        # Le tour en cours : son début et ce qu'il a déjà fait, montrés pendant qu'il travaille.
+        self._debut_tour = 0
+        self._bilan = Bilan()
 
     # ------------------------------------------------------------------ état public
 
@@ -152,6 +158,7 @@ class Session:
             "activite": self.activite,
             "claude_session_id": self.claude_session_id,
             "en_file": self._file.qsize(),
+            "tour": {"debut": self._debut_tour, "bilan": self._bilan.en_dict()} if self._occupe else None,
             "cree_a": self.cree_a,
             "maj_a": self.maj_a,
             "evenements": self.evenements,
@@ -209,6 +216,8 @@ class Session:
     async def _tour(self, texte: str, pieces: Pieces) -> None:
         self._occupe = True
         self._dernier_texte = ""
+        self._debut_tour = _maintenant()
+        self._bilan = Bilan()
         self._changer(etat=self._etat_courant(), activite="Réflexion…")
         try:
             texte = texte + pieces.texte_chemins()
@@ -232,9 +241,16 @@ class Session:
         elif isinstance(message, AssistantMessage):
             for bloc in message.content:
                 if isinstance(bloc, ToolUseBlock):
+                    self._bilan.lance(bloc.id, bloc.name, bloc.input or {})
                     self._changer(activite=decrire_activite(bloc.name, bloc.input or {}))
                 elif isinstance(bloc, TextBlock) and bloc.text.strip():
                     self._dernier_texte = bloc.text
+        elif isinstance(message, UserMessage) and isinstance(message.content, list):
+            resultats = [b for b in message.content if isinstance(b, ToolResultBlock)]
+            # Le détail (structuredPatch…) ne vaut que pour un résultat seul dans son message.
+            detail = message.tool_use_result if len(resultats) == 1 else None
+            if any([self._bilan.termine(b.tool_use_id, bool(b.is_error), detail) for b in resultats]):
+                self._changer()
         elif isinstance(message, ResultMessage):
             if message.session_id:
                 self.claude_session_id = message.session_id
@@ -246,6 +262,8 @@ class Session:
                 duree_ms=message.duration_ms,
                 cout_usd=message.total_cost_usd,
                 tours=message.num_turns,
+                debut=self._debut_tour,
+                bilan=self._bilan.en_dict(),
             )
 
     async def fermer(self) -> None:

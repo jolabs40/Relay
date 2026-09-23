@@ -89,6 +89,8 @@ import net.jolabs40.relay.ressources.resultat_erreur
 import net.jolabs40.relay.ressources.resultat_titre
 import net.jolabs40.relay.ui.Modes
 import net.jolabs40.relay.ui.duree
+import net.jolabs40.relay.ui.heure
+import net.jolabs40.relay.ressources.repondu_a
 import net.jolabs40.relay.ui.libelleMode
 import net.jolabs40.relay.ui.detailMode
 import org.jetbrains.compose.resources.DrawableResource
@@ -107,7 +109,7 @@ private val LARGEUR_MAX = 820.dp
 @Composable
 fun CarteEvenement(evenement: Evenement, actions: ActionsCartes) {
     when (evenement.type) {
-        Evenement.PROMPT -> BullePrompt(evenement.texte.orEmpty(), evenement.pieces)
+        Evenement.PROMPT -> BullePrompt(evenement.texte.orEmpty(), evenement.pieces, evenement.horodatage)
         Evenement.QUESTION -> CarteQuestion(evenement, actions)
         Evenement.PERMISSION -> CartePermission(evenement, actions)
         Evenement.PLAN -> CartePlan(evenement, actions)
@@ -123,6 +125,7 @@ private fun Cadre(
     icone: DrawableResource,
     titre: String,
     enAttente: Boolean,
+    horodatage: Long,
     couleur: Color = MaterialTheme.colorScheme.primary,
     contenu: @Composable () -> Unit,
 ) {
@@ -133,11 +136,17 @@ private fun Cadre(
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Icon(painterResource(icone), null, tint = couleur, modifier = Modifier.size(20.dp))
-                Text(titre, style = MaterialTheme.typography.titleSmall, color = couleur)
+                Text(titre, style = MaterialTheme.typography.titleSmall, color = couleur, modifier = Modifier.weight(1f))
+                if (horodatage > 0) Heure(horodatage)
             }
             contenu()
         }
     }
+}
+
+@Composable
+private fun Heure(horodatage: Long, modifier: Modifier = Modifier) {
+    Text(heure(horodatage), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = modifier)
 }
 
 @Composable
@@ -188,7 +197,7 @@ private fun JsonObject?.annulation(): String? = this?.texte("annule")
 // ---------------------------------------------------------------------------- prompt
 
 @Composable
-private fun BullePrompt(texte: String, pieces: List<PieceAffichee>) {
+private fun BullePrompt(texte: String, pieces: List<PieceAffichee>, horodatage: Long) {
     Column(
         Modifier.widthIn(max = LARGEUR_MAX).fillMaxWidth(),
         horizontalAlignment = Alignment.End,
@@ -204,6 +213,7 @@ private fun BullePrompt(texte: String, pieces: List<PieceAffichee>) {
                 Text(texte, Modifier.padding(horizontal = 14.dp, vertical = 10.dp), color = MaterialTheme.colorScheme.onPrimaryContainer)
             }
         }
+        if (horodatage > 0) Heure(horodatage, Modifier.padding(end = 4.dp))
     }
 }
 
@@ -221,7 +231,7 @@ private fun CarteQuestion(evenement: Evenement, actions: ActionsCartes) {
         return (retenus + listOfNotNull(libre)).joinToString(", ")
     }
 
-    Cadre(Res.drawable.baseline_question_answer_24, stringResource(Res.string.question_titre), evenement.enAttente) {
+    Cadre(Res.drawable.baseline_question_answer_24, stringResource(Res.string.question_titre), evenement.enAttente, evenement.horodatage) {
         val donnees = evenement.reponse?.get("reponses")?.jsonObject
         evenement.questions.forEach { question ->
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -319,6 +329,7 @@ private fun CartePermission(evenement: Evenement, actions: ActionsCartes) {
         Res.drawable.baseline_security_24,
         stringResource(Res.string.permission_titre),
         evenement.enAttente,
+        evenement.horodatage,
         couleur = MaterialTheme.colorScheme.tertiary,
     ) {
         Text(evenement.resume ?: evenement.outil.orEmpty(), style = MaterialTheme.typography.titleMedium)
@@ -366,7 +377,7 @@ private fun CartePlan(evenement: Evenement, actions: ActionsCartes) {
     var mode by remember(evenement.demande) { mutableStateOf(Modes.EDITIONS) }
     var changements by remember(evenement.demande) { mutableStateOf(false) }
     var commentaire by remember(evenement.demande) { mutableStateOf("") }
-    Cadre(Res.drawable.baseline_assignment_24, stringResource(Res.string.plan_titre), evenement.enAttente) {
+    Cadre(Res.drawable.baseline_assignment_24, stringResource(Res.string.plan_titre), evenement.enAttente, evenement.horodatage) {
         Surface(
             color = MaterialTheme.colorScheme.surfaceContainerLow,
             shape = RoundedCornerShape(8.dp),
@@ -442,16 +453,26 @@ private fun CarteResultat(evenement: Evenement) {
         if (evenement.erreur) Res.drawable.baseline_error_24 else Res.drawable.baseline_task_alt_24,
         stringResource(if (evenement.erreur) Res.string.resultat_erreur else Res.string.resultat_titre),
         enAttente = false,
+        horodatage = evenement.horodatage,
         couleur = couleur,
     ) {
         TexteMarkdown(evenement.texte.orEmpty())
-        val ms = evenement.dureeMs
-        if (ms != null) {
-            Text(
-                stringResource(Res.string.details_tour, duree(ms), evenement.tours ?: 0),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+        // Le temps de réponse compte depuis le début du tour ; à défaut, la durée que donne le SDK.
+        val debut = evenement.debut ?: 0
+        val ms = if (debut > 0 && evenement.horodatage >= debut) evenement.horodatage - debut else evenement.dureeMs
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            val details = listOfNotNull(
+                evenement.horodatage.takeIf { it > 0 }?.let { stringResource(Res.string.repondu_a, heure(it)) },
+                ms?.let { stringResource(Res.string.details_tour, duree(it), evenement.tours ?: 0) },
             )
+            if (details.isNotEmpty()) {
+                Text(
+                    details.joinToString(" · "),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            evenement.bilan?.let { LigneBilan(it) }
         }
     }
 }
@@ -466,6 +487,7 @@ private fun LigneInfo(evenement: Evenement) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         val couleur = if (evenement.erreur) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+        if (evenement.horodatage > 0) Heure(evenement.horodatage, Modifier.padding(end = 8.dp))
         Icon(painterResource(Res.drawable.baseline_info_24), null, tint = couleur, modifier = Modifier.size(16.dp))
         Text(
             evenement.texte.orEmpty(),

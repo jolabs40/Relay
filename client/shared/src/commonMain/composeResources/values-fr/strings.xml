@@ -5,7 +5,7 @@
     <string name="deconnecte">Relais injoignable</string>
     <string name="deconnecte_raison">Relais injoignable : %1$s</string>
     <string name="non_connecte">Pas de connexion au relais</string>
-    <string name="relais_ancien">Le relais tourne dans une version plus ancienne et ignore les pièces jointes. Relance-le : icône de la zone de notification, « Arrêter le relais », puis rouvre Relay. Les sessions ouvertes se reprennent ensuite.</string>
+    <string name="relais_ancien">Le relais tourne dans une version plus ancienne : il ignore les pièces jointes et ne rend pas compte de l'avancement. Relance-le : icône de la zone de notification, « Arrêter le relais », puis rouvre Relay. Les sessions ouvertes se reprennent ensuite.</string>
     <string name="erreur_relais">Relais : %1$s</string>
 
     <!-- Liste des sessions -->
@@ -78,6 +78,32 @@
     <string name="resultat_titre">Compte rendu</string>
     <string name="resultat_erreur">Terminé sur une erreur</string>
     <string name="details_tour">%1$s · %2$d étapes</string>
+    <string name="repondu_a">Répondu à %1$s</string>
+    <string name="bilan_lignes">+%1$d −%2$d lignes</string>
+    <plurals name="bilan_modifies">
+        <item quantity="one">%1$d fichier modifié</item>
+        <item quantity="other">%1$d fichiers modifiés</item>
+    </plurals>
+    <plurals name="bilan_crees">
+        <item quantity="one">%1$d créé</item>
+        <item quantity="other">%1$d créés</item>
+    </plurals>
+    <plurals name="bilan_tests_ecrits">
+        <item quantity="one">%1$d test écrit</item>
+        <item quantity="other">%1$d tests écrits</item>
+    </plurals>
+    <plurals name="bilan_tests_lances">
+        <item quantity="one">tests lancés %1$d fois</item>
+        <item quantity="other">tests lancés %1$d fois</item>
+    </plurals>
+    <plurals name="bilan_echecs">
+        <item quantity="one">%1$d en échec</item>
+        <item quantity="other">%1$d en échec</item>
+    </plurals>
+    <plurals name="bilan_actions">
+        <item quantity="one">%1$d action</item>
+        <item quantity="other">%1$d actions</item>
+    </plurals>
     <string name="envoyer_reponse">Envoyer</string>
     <string name="copier">Copier</string>
 
