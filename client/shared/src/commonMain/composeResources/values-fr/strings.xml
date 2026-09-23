@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Connexion -->
+    <string name="connexion_en_cours">Connexion au relais…</string>
+    <string name="deconnecte">Relais injoignable</string>
+    <string name="deconnecte_raison">Relais injoignable : %1$s</string>
+    <string name="non_connecte">Pas de connexion au relais</string>
+    <string name="erreur_relais">Relais : %1$s</string>
+
+    <!-- Liste des sessions -->
+    <string name="sessions">Sessions</string>
+    <string name="nouvelle_session">Nouvelle session</string>
+    <string name="aucune_session">Aucune session pour l'instant</string>
+    <string name="etat_demarrage">Démarrage</string>
+    <string name="etat_inactive">Au repos</string>
+    <string name="etat_travaille">Au travail</string>
+    <string name="etat_attente">T'attend</string>
+    <string name="etat_erreur">Arrêtée</string>
+    <string name="sans_titre">Sans titre</string>
+
+    <!-- Modes -->
+    <string name="mode">Mode</string>
+    <string name="mode_default">Demander avant d'agir</string>
+    <string name="mode_accept_edits">Accepter les modifications</string>
+    <string name="mode_plan">Planifier d'abord</string>
+    <string name="mode_bypass">Autonomie complète</string>
+    <string name="mode_default_detail">Chaque outil qui modifie quelque chose te demande d'abord.</string>
+    <string name="mode_accept_edits_detail">Les modifications de fichiers passent ; les commandes demandent.</string>
+    <string name="mode_plan_detail">Claude explore, puis te soumet un plan à approuver.</string>
+    <string name="mode_bypass_detail">Claude agit seul ; seules ses questions te parviennent.</string>
+
+    <!-- Nouvelle session -->
+    <string name="projet">Projet</string>
+    <string name="rechercher_projet">Chercher un projet</string>
+    <string name="choisir_projet">Choisis un projet dans la liste à gauche</string>
+    <string name="aucun_projet">Aucun projet ne correspond</string>
+    <string name="reprise">Conversation</string>
+    <string name="reprise_nouvelle">Repartir de zéro</string>
+    <string name="reprise_chargement">Lecture des sessions passées…</string>
+    <string name="reprise_vide">Aucune session passée dans ce dossier</string>
+    <string name="prompt_indice">Que doit faire Claude ?</string>
+    <string name="prompt_reprise_indice">Consigne suivante (facultative en reprise)</string>
+    <string name="demarrer">Démarrer</string>
+    <string name="raccourci_envoi">Entrée pour envoyer · Maj+Entrée pour aller à la ligne</string>
+
+    <!-- Session ouverte -->
+    <string name="interrompre">Interrompre</string>
+    <string name="fermer_session">Fermer la session</string>
+    <string name="envoyer">Envoyer</string>
+    <string name="message_indice">Réponds ou donne une nouvelle consigne…</string>
+    <string name="en_file">%1$d en file</string>
+    <string name="reflexion">Réflexion…</string>
+    <string name="session_arretee">Cette session s'est arrêtée. Ouvre-en une nouvelle pour continuer.</string>
+    <string name="attend_reponse">Claude attend ta réponse plus haut.</string>
+
+    <!-- Cartes -->
+    <string name="question_titre">Claude demande</string>
+    <string name="autre">Autre</string>
+    <string name="autre_indice">Ta propre réponse</string>
+    <string name="repondre">Répondre</string>
+    <string name="reponse_donnee">Réponse : %1$s</string>
+    <string name="permission_titre">Permission demandée</string>
+    <string name="autoriser">Autoriser</string>
+    <string name="refuser">Refuser</string>
+    <string name="motif_indice">Motif, transmis à Claude (facultatif)</string>
+    <string name="autorise">Autorisé</string>
+    <string name="refuse">Refusé</string>
+    <string name="refuse_motif">Refusé : %1$s</string>
+    <string name="plan_titre">Plan proposé</string>
+    <string name="approuver_executer">Approuver et exécuter</string>
+    <string name="executer_en">Puis exécuter en</string>
+    <string name="demander_changements">Demander des changements</string>
+    <string name="commentaire_plan_indice">Que faut-il changer ?</string>
+    <string name="plan_approuve">Plan approuvé</string>
+    <string name="plan_refuse">Changements demandés : %1$s</string>
+    <string name="annule">Annulé : %1$s</string>
+    <string name="resultat_titre">Compte rendu</string>
+    <string name="resultat_erreur">Terminé sur une erreur</string>
+    <string name="details_tour">%1$s · %2$d étapes</string>
+    <string name="envoyer_reponse">Envoyer</string>
+    <string name="copier">Copier</string>
+
+    <!-- Alertes -->
+    <string name="alerte_question">%1$s te pose une question</string>
+    <string name="alerte_permission">%1$s demande une permission</string>
+    <string name="alerte_plan">%1$s propose un plan</string>
+    <string name="alerte_resultat">%1$s a terminé</string>
+
+    <!-- Fenêtre et zone de notification -->
+    <string name="ouvrir">Ouvrir Relay</string>
+    <string name="quitter">Quitter</string>
+    <string name="arreter_relais">Arrêter le relais et toutes les sessions</string>
+    <string name="relais_continue">Les sessions continuent dans le relais après la fermeture de cette fenêtre.</string>
+</resources>

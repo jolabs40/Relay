@@ -1,0 +1,17 @@
+# Client : sorties de build et caches
+client/.gradle/
+client/.kotlin/
+client/build/
+client/*/build/
+client/local.properties
+client/.idea/
+*.iml
+
+# Relais
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Le jeton vit dans %APPDATA%\Relay, jamais ici.
+config.json
+.DS_Store

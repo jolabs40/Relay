@@ -1,0 +1,9 @@
+[project]
+name = "relay"
+version = "0.1.0"
+description = "Relais entre Claude Code et ses clients (Windows, puis Android)"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Relay</string>
+
+    <!-- Connexion -->
+    <string name="connexion_en_cours">Connecting to the relay…</string>
+    <string name="deconnecte">Relay unreachable</string>
+    <string name="deconnecte_raison">Relay unreachable: %1$s</string>
+    <string name="non_connecte">Not connected to the relay</string>
+    <string name="erreur_relais">Relay: %1$s</string>
+
+    <!-- Liste des sessions -->
+    <string name="sessions">Sessions</string>
+    <string name="nouvelle_session">New session</string>
+    <string name="aucune_session">No session yet</string>
+    <string name="etat_demarrage">Starting</string>
+    <string name="etat_inactive">Idle</string>
+    <string name="etat_travaille">Working</string>
+    <string name="etat_attente">Needs you</string>
+    <string name="etat_erreur">Stopped</string>
+    <string name="sans_titre">Untitled</string>
+
+    <!-- Modes -->
+    <string name="mode">Mode</string>
+    <string name="mode_default">Ask before acting</string>
+    <string name="mode_accept_edits">Accept edits</string>
+    <string name="mode_plan">Plan first</string>
+    <string name="mode_bypass">Full autonomy</string>
+    <string name="mode_default_detail">Every tool that changes something asks you first.</string>
+    <string name="mode_accept_edits_detail">File edits go through; commands still ask.</string>
+    <string name="mode_plan_detail">Claude explores, then submits a plan for your approval.</string>
+    <string name="mode_bypass_detail">Claude acts alone; only its questions reach you.</string>
+
+    <!-- Nouvelle session -->
+    <string name="projet">Project</string>
+    <string name="rechercher_projet">Search a project</string>
+    <string name="choisir_projet">Pick a project in the list on the left</string>
+    <string name="aucun_projet">No matching project</string>
+    <string name="reprise">Conversation</string>
+    <string name="reprise_nouvelle">Start fresh</string>
+    <string name="reprise_chargement">Loading past sessions…</string>
+    <string name="reprise_vide">No past session in this folder</string>
+    <string name="prompt_indice">What should Claude do?</string>
+    <string name="prompt_reprise_indice">Next instruction (optional when resuming)</string>
+    <string name="demarrer">Start</string>
+    <string name="raccourci_envoi">Enter to send · Shift+Enter for a new line</string>
+
+    <!-- Session ouverte -->
+    <string name="interrompre">Interrupt</string>
+    <string name="fermer_session">Close session</string>
+    <string name="envoyer">Send</string>
+    <string name="message_indice">Answer or give a new instruction…</string>
+    <string name="en_file">%1$d queued</string>
+    <string name="reflexion">Thinking…</string>
+    <string name="session_arretee">This session has stopped. Start a new one to continue.</string>
+    <string name="attend_reponse">Claude is waiting for your answer above.</string>
+
+    <!-- Cartes -->
+    <string name="question_titre">Claude asks</string>
+    <string name="autre">Other</string>
+    <string name="autre_indice">Your own answer</string>
+    <string name="repondre">Answer</string>
+    <string name="reponse_donnee">Answer: %1$s</string>
+    <string name="permission_titre">Permission requested</string>
+    <string name="autoriser">Allow</string>
+    <string name="refuser">Deny</string>
+    <string name="motif_indice">Reason, sent to Claude (optional)</string>
+    <string name="autorise">Allowed</string>
+    <string name="refuse">Denied</string>
+    <string name="refuse_motif">Denied: %1$s</string>
+    <string name="plan_titre">Proposed plan</string>
+    <string name="approuver_executer">Approve and run</string>
+    <string name="executer_en">Then run with</string>
+    <string name="demander_changements">Request changes</string>
+    <string name="commentaire_plan_indice">What should change?</string>
+    <string name="plan_approuve">Plan approved</string>
+    <string name="plan_refuse">Changes requested: %1$s</string>
+    <string name="annule">Cancelled: %1$s</string>
+    <string name="resultat_titre">Summary</string>
+    <string name="resultat_erreur">Ended with an error</string>
+    <string name="details_tour">%1$s · %2$d steps</string>
+    <string name="envoyer_reponse">Send</string>
+    <string name="copier">Copy</string>
+
+    <!-- Alertes -->
+    <string name="alerte_question">%1$s asks a question</string>
+    <string name="alerte_permission">%1$s needs a permission</string>
+    <string name="alerte_plan">%1$s proposes a plan</string>
+    <string name="alerte_resultat">%1$s is done</string>
+
+    <!-- Fenêtre et zone de notification -->
+    <string name="ouvrir">Open Relay</string>
+    <string name="quitter">Quit</string>
+    <string name="arreter_relais">Stop the relay and all sessions</string>
+    <string name="relais_continue">Sessions keep running in the relay after you close this window.</string>
+</resources>
