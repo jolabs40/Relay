@@ -13,6 +13,8 @@ import net.jolabs40.relay.ressources.bilan_actions
 import net.jolabs40.relay.ressources.bilan_crees
 import net.jolabs40.relay.ressources.bilan_echecs
 import net.jolabs40.relay.ressources.bilan_lignes
+import net.jolabs40.relay.ressources.bilan_lignes_ajoutees
+import net.jolabs40.relay.ressources.bilan_lignes_retirees
 import net.jolabs40.relay.ressources.bilan_modifies
 import net.jolabs40.relay.ressources.bilan_tests_ecrits
 import net.jolabs40.relay.ressources.bilan_tests_lances
@@ -38,7 +40,10 @@ fun LigneBilan(bilan: Bilan, modifier: Modifier = Modifier) {
     }
     if (morceaux.isEmpty()) return
 
+    // Un côté à zéro se tait : « +581 lignes » plutôt que « +581 −0 lignes ».
     val lignes = stringResource(Res.string.bilan_lignes, bilan.lignesAjoutees, bilan.lignesRetirees)
+    val lignesAjoutees = stringResource(Res.string.bilan_lignes_ajoutees, bilan.lignesAjoutees)
+    val lignesRetirees = stringResource(Res.string.bilan_lignes_retirees, bilan.lignesRetirees)
     val plus = "+${bilan.lignesAjoutees}"
     val moins = "−${bilan.lignesRetirees}"
     val vert = MaterialTheme.colorScheme.secondary
@@ -51,7 +56,11 @@ fun LigneBilan(bilan: Bilan, modifier: Modifier = Modifier) {
                 return@forEachIndexed
             }
             // Le « +N » et le « −N » de la chaîne traduite, colorés là où ils sont.
-            var reste = lignes
+            var reste = when {
+                bilan.lignesRetirees == 0 -> lignesAjoutees
+                bilan.lignesAjoutees == 0 -> lignesRetirees
+                else -> lignes
+            }
             listOf(plus to vert, moins to rouge).forEach { (nombre, couleur) ->
                 val position = reste.indexOf(nombre)
                 if (position < 0) return@forEach

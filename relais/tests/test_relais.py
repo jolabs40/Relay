@@ -104,6 +104,7 @@ def test_question_remonte_et_reponse_repart():
         decision = clients[0].decisions[0]
         assert isinstance(decision, PermissionResultAllow)
         assert decision.updated_input["answers"] == {"Thé ou café ?": "Thé"}
+        assert question["repondu_a"] >= question["horodatage"]
         assert [e["type"] for e in session.evenements] == ["prompt", "question", "resultat"]
         assert session.evenements[-1]["texte"] == "Fini."
         assert session.claude_session_id == "sid-claude"

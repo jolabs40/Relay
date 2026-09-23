@@ -91,6 +91,7 @@ import net.jolabs40.relay.ui.Modes
 import net.jolabs40.relay.ui.duree
 import net.jolabs40.relay.ui.heure
 import net.jolabs40.relay.ressources.repondu_a
+import net.jolabs40.relay.ressources.ta_reponse
 import net.jolabs40.relay.ui.libelleMode
 import net.jolabs40.relay.ui.detailMode
 import org.jetbrains.compose.resources.DrawableResource
@@ -127,6 +128,7 @@ private fun Cadre(
     enAttente: Boolean,
     horodatage: Long,
     couleur: Color = MaterialTheme.colorScheme.primary,
+    reponduA: Long? = null,
     contenu: @Composable () -> Unit,
 ) {
     OutlinedCard(
@@ -140,6 +142,14 @@ private fun Cadre(
                 if (horodatage > 0) Heure(horodatage)
             }
             contenu()
+            // Une demande close : l'heure de la réponse, et combien de temps Claude a attendu.
+            if (!enAttente && reponduA != null && horodatage > 0 && reponduA >= horodatage) {
+                Text(
+                    stringResource(Res.string.ta_reponse, heure(reponduA), duree(reponduA - horodatage)),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }
@@ -231,7 +241,7 @@ private fun CarteQuestion(evenement: Evenement, actions: ActionsCartes) {
         return (retenus + listOfNotNull(libre)).joinToString(", ")
     }
 
-    Cadre(Res.drawable.baseline_question_answer_24, stringResource(Res.string.question_titre), evenement.enAttente, evenement.horodatage) {
+    Cadre(Res.drawable.baseline_question_answer_24, stringResource(Res.string.question_titre), evenement.enAttente, evenement.horodatage, reponduA = evenement.reponduA) {
         val donnees = evenement.reponse?.get("reponses")?.jsonObject
         evenement.questions.forEach { question ->
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -331,6 +341,7 @@ private fun CartePermission(evenement: Evenement, actions: ActionsCartes) {
         evenement.enAttente,
         evenement.horodatage,
         couleur = MaterialTheme.colorScheme.tertiary,
+        reponduA = evenement.reponduA,
     ) {
         Text(evenement.resume ?: evenement.outil.orEmpty(), style = MaterialTheme.typography.titleMedium)
         if (!evenement.detail.isNullOrBlank()) BlocCode(evenement.detail)
@@ -377,7 +388,7 @@ private fun CartePlan(evenement: Evenement, actions: ActionsCartes) {
     var mode by remember(evenement.demande) { mutableStateOf(Modes.EDITIONS) }
     var changements by remember(evenement.demande) { mutableStateOf(false) }
     var commentaire by remember(evenement.demande) { mutableStateOf("") }
-    Cadre(Res.drawable.baseline_assignment_24, stringResource(Res.string.plan_titre), evenement.enAttente, evenement.horodatage) {
+    Cadre(Res.drawable.baseline_assignment_24, stringResource(Res.string.plan_titre), evenement.enAttente, evenement.horodatage, reponduA = evenement.reponduA) {
         Surface(
             color = MaterialTheme.colorScheme.surfaceContainerLow,
             shape = RoundedCornerShape(8.dp),

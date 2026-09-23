@@ -41,7 +41,8 @@ from .session import MODES, ErreurCommande, FabriqueClient, Session
 log = logging.getLogger("relay.serveur")
 
 # 2 : pièces jointes (``pieces`` dans ``nouvelle`` et ``envoyer``).
-# 3 : suivi du travail (``tour`` dans la session, ``debut`` et ``bilan`` dans ``resultat``).
+# 3 : suivi du travail (``tour`` dans la session, ``debut`` et ``bilan`` dans ``resultat``,
+#     ``repondu_a`` dans une demande close).
 VERSION_PROTOCOLE = 3
 
 

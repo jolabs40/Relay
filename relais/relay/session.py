@@ -332,6 +332,8 @@ class Session:
             self._demandes.pop(evenement["demande"], None)
         evenement["en_attente"] = False
         evenement["reponse"] = reponse
+        if not reponse.get("annule"):
+            evenement["repondu_a"] = _maintenant()
         self._changer(etat=self._etat_courant())
         return reponse
 

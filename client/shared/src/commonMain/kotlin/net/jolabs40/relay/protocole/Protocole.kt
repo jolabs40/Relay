@@ -108,6 +108,8 @@ data class Evenement(
     val debut: Long? = null,
     val bilan: Bilan? = null,
     val reponse: JsonObject? = null,
+    /** Question, permission, plan : quand l'utilisateur a répondu (absent si la demande a été annulée). */
+    @SerialName("repondu_a") val reponduA: Long? = null,
     val pieces: List<PieceAffichee> = emptyList(),
 ) {
     companion object {
