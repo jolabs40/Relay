@@ -1,6 +1,18 @@
 package net.jolabs40.relay.ui.ecrans
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import net.jolabs40.relay.protocole.VERSION_PROTOCOLE
+import net.jolabs40.relay.ressources.deposer_ici
+import net.jolabs40.relay.ressources.relais_ancien
+import net.jolabs40.relay.ressources.pieces_refusees
+import net.jolabs40.relay.ui.pieces.deposerFichiers
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -39,7 +51,14 @@ import org.jetbrains.compose.resources.stringResource
 fun EcranRelais(vm: RelaisViewModel) {
     val etat by vm.etat.collectAsStateWithLifecycle()
     val brouillons by vm.brouillons.collectAsStateWithLifecycle()
+    val pieces by vm.pieces.collectAsStateWithLifecycle()
+    val versionRelais by vm.versionRelais.collectAsStateWithLifecycle()
     val messages = remember { SnackbarHostState() }
+    var survol by remember { mutableStateOf(false) }
+
+    LaunchedEffect(vm) {
+        vm.refus.collect { noms -> messages.showSnackbar(getString(Res.string.pieces_refusees, noms.joinToString(", "))) }
+    }
 
     LaunchedEffect(vm) {
         vm.erreurs.collect { erreur ->
@@ -52,6 +71,7 @@ fun EcranRelais(vm: RelaisViewModel) {
     Scaffold(snackbarHost = { SnackbarHost(messages) }) { marges ->
         Column(Modifier.fillMaxSize().padding(marges)) {
             BandeauConnexion(etat.connexion)
+            if (etat.connexion == EtatConnexion.Connecte && versionRelais < VERSION_PROTOCOLE) BandeauRelaisAncien()
             Row(Modifier.weight(1f)) {
                 PanneauSessions(
                     projets = etat.projets,
@@ -63,13 +83,19 @@ fun EcranRelais(vm: RelaisViewModel) {
                     modifier = Modifier.width(300.dp),
                 )
                 VerticalDivider()
-                Box(Modifier.weight(1f)) {
-                    val session = etat.sessionOuverte
-                    if (session == null || etat.volet == Volet.Nouvelle) {
+                val session = etat.sessionOuverte?.takeIf { etat.volet != Volet.Nouvelle }
+                // Les fichiers déposés rejoignent la session ouverte, ou la nouvelle en préparation.
+                val cle = session?.id ?: RelaisViewModel.CLE_NOUVELLE
+                Box(Modifier.weight(1f).deposerFichiers(survol = { survol = it }, recevoir = { vm.ajouterPieces(cle, it) })) {
+                    if (session == null) {
                         NouvelleSession(
                             projet = etat.projetChoisi,
                             modes = etat.modes,
                             historiques = etat.historiques,
+                            pieces = pieces[cle].orEmpty(),
+                            retirerPiece = { vm.retirerPiece(cle, it) },
+                            collerPieces = { vm.collerPieces(cle) },
+                            parcourirPieces = { vm.parcourirPieces(cle) },
                             demarrer = vm::nouvelleSession,
                             connecte = etat.connexion == EtatConnexion.Connecte,
                         )
@@ -80,6 +106,10 @@ fun EcranRelais(vm: RelaisViewModel) {
                             modes = etat.modes,
                             brouillon = brouillons[id].orEmpty(),
                             changerBrouillon = { vm.brouillon(id, it) },
+                            pieces = pieces[id].orEmpty(),
+                            retirerPiece = { vm.retirerPiece(id, it) },
+                            collerPieces = { vm.collerPieces(id) },
+                            parcourirPieces = { vm.parcourirPieces(id) },
                             envoyer = { vm.envoyerPrompt(id) },
                             interrompre = { vm.interrompre(id) },
                             changerMode = { vm.changerMode(id, it) },
@@ -87,6 +117,7 @@ fun EcranRelais(vm: RelaisViewModel) {
                             actions = remember(id) { actionsPour(vm, id) },
                         )
                     }
+                    if (survol) VoileDepot()
                 }
             }
         }
@@ -102,6 +133,30 @@ private fun actionsPour(vm: RelaisViewModel, session: String) = object : Actions
 
     override fun repondrePlan(demande: String, approuver: Boolean, mode: String?, commentaire: String?) =
         vm.repondrePlan(session, demande, approuver, mode, commentaire)
+}
+
+@Composable
+private fun BoxScope.VoileDepot() {
+    Box(
+        Modifier.matchParentSize().padding(12.dp)
+            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), RoundedCornerShape(16.dp))
+            .border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(16.dp)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(stringResource(Res.string.deposer_ici), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
+    }
+}
+
+@Composable
+private fun BandeauRelaisAncien() {
+    Surface(color = MaterialTheme.colorScheme.tertiaryContainer, modifier = Modifier.fillMaxWidth()) {
+        Text(
+            stringResource(Res.string.relais_ancien),
+            color = MaterialTheme.colorScheme.onTertiaryContainer,
+            style = MaterialTheme.typography.labelMedium,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        )
+    }
 }
 
 @Composable

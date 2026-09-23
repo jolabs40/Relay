@@ -9,6 +9,7 @@ import sys
 from logging.handlers import RotatingFileHandler
 
 from .config import annoncer, charger_config, dossier_donnees, retirer_annonce
+from .pieces import purger_anciennes
 from .serveur import Relais, servir
 
 
@@ -32,6 +33,7 @@ def main() -> int:
     if args.jeton:
         print(config.jeton)
         return 0
+    purger_anciennes()
     port = args.port or config.port
     hote = "0.0.0.0" if config.reseau_local else "127.0.0.1"
 

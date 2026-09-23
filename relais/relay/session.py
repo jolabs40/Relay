@@ -40,6 +40,8 @@ from claude_agent_sdk.types import (
     ToolPermissionContext,
 )
 
+from .pieces import Pieces, dossier_pieces, preparer
+
 log = logging.getLogger("relay.session")
 
 MODES = ("default", "acceptEdits", "plan", "bypassPermissions")
@@ -93,6 +95,11 @@ def detailler_permission(nom: str, entree: dict) -> str:
     return json.dumps(entree, ensure_ascii=False, indent=2)[:2000]
 
 
+async def _un_message(blocs: list[dict]):
+    """Le SDK n'accepte un contenu à blocs que sous forme de flux de messages."""
+    yield {"type": "user", "parent_tool_use_id": None, "message": {"role": "user", "content": blocs}}
+
+
 class ErreurCommande(Exception):
     """Commande du client impossible dans l'état présent de la session."""
 
@@ -123,7 +130,8 @@ class Session:
         self.evenements: list[dict] = []
         self._notifier = notifier
         self._fabrique = fabrique_client
-        self._file: asyncio.Queue[str] = asyncio.Queue()
+        # Chaque prompt en attente : son texte, et ses pièces déjà préparées.
+        self._file: asyncio.Queue[tuple[str, Pieces]] = asyncio.Queue()
         self._demandes: dict[str, asyncio.Future] = {}
         self._client: Any = None
         self._tache: asyncio.Task | None = None
@@ -178,6 +186,8 @@ class Session:
             permission_mode=self.mode,
             resume=self.reprendre,
             can_use_tool=self._decider,
+            # Les fichiers joints y sont déposés : Claude doit pouvoir les lire hors du projet.
+            add_dirs=[str(dossier_pieces())],
             setting_sources=["user", "project", "local"],
             system_prompt={"type": "preset", "preset": "claude_code", "append": CONSIGNE_RELAIS},
         )
@@ -186,8 +196,8 @@ class Session:
                 self._client = client
                 self._changer(etat="inactive")
                 while True:
-                    prompt = await self._file.get()
-                    await self._tour(prompt)
+                    texte, pieces = await self._file.get()
+                    await self._tour(texte, pieces)
         except asyncio.CancelledError:
             raise
         except Exception as erreur:  # le processus Claude est mort, ou n'a pas démarré
@@ -196,12 +206,18 @@ class Session:
             self._ajouter("info", texte=f"Session arrêtée : {erreur}", erreur=True)
             self._changer(etat="erreur", activite="")
 
-    async def _tour(self, prompt: str) -> None:
+    async def _tour(self, texte: str, pieces: Pieces) -> None:
         self._occupe = True
         self._dernier_texte = ""
         self._changer(etat=self._etat_courant(), activite="Réflexion…")
         try:
-            await self._client.query(prompt)
+            texte = texte + pieces.texte_chemins()
+            if pieces.images:
+                # Un message à blocs : le texte, puis les images, comme un collage dans le terminal.
+                blocs = ([{"type": "text", "text": texte}] if texte.strip() else []) + pieces.images
+                await self._client.query(_un_message(blocs))
+            else:
+                await self._client.query(texte)
             async for message in self._client.receive_response():
                 self._traiter(message)
         finally:
@@ -244,16 +260,20 @@ class Session:
 
     # ------------------------------------------------------------------ commandes du client
 
-    def envoyer(self, prompt: str) -> None:
+    def envoyer(self, prompt: str, pieces: list[dict] | None = None) -> None:
         prompt = prompt.strip()
-        if not prompt:
+        if not prompt and not pieces:
             raise ErreurCommande("Prompt vide")
         if self.etat in ("erreur", "fermee"):
             raise ErreurCommande("Session arrêtée")
+        try:
+            preparees = preparer(self.id, pieces)
+        except ValueError as erreur:
+            raise ErreurCommande(str(erreur)) from erreur
         if not self.titre:
-            self.titre = _court(prompt, 60)
-        self._ajouter("prompt", texte=prompt)
-        self._file.put_nowait(prompt)
+            self.titre = _court(prompt or preparees.affichage[0]["nom"], 60)
+        self._ajouter("prompt", texte=prompt, pieces=preparees.affichage)
+        self._file.put_nowait((prompt, preparees))
         self._changer()
 
     async def interrompre(self) -> None:

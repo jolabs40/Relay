@@ -42,7 +42,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import net.jolabs40.relay.protocole.PieceJointe
 import net.jolabs40.relay.protocole.SessionRelais
+import net.jolabs40.relay.ressources.baseline_attach_file_24
+import net.jolabs40.relay.ressources.joindre
+import net.jolabs40.relay.ui.pieces.BarrePieces
+import net.jolabs40.relay.ui.pieces.collerPieces
 import net.jolabs40.relay.ressources.Res
 import net.jolabs40.relay.ressources.attend_reponse
 import net.jolabs40.relay.ressources.baseline_close_24
@@ -71,6 +76,10 @@ fun PanneauSession(
     modes: List<String>,
     brouillon: String,
     changerBrouillon: (String) -> Unit,
+    pieces: List<PieceJointe>,
+    retirerPiece: (Int) -> Unit,
+    collerPieces: () -> Unit,
+    parcourirPieces: () -> Unit,
     envoyer: () -> Unit,
     interrompre: () -> Unit,
     changerMode: (String) -> Unit,
@@ -98,7 +107,7 @@ fun PanneauSession(
         }
 
         BarreActivite(session, interrompre)
-        ZoneSaisie(session, brouillon, changerBrouillon, envoyer)
+        ZoneSaisie(session, brouillon, changerBrouillon, pieces, retirerPiece, collerPieces, parcourirPieces, envoyer)
     }
 }
 
@@ -177,24 +186,40 @@ private fun BarreActivite(session: SessionRelais, interrompre: () -> Unit) {
 }
 
 @Composable
-private fun ZoneSaisie(session: SessionRelais, brouillon: String, changer: (String) -> Unit, envoyer: () -> Unit) {
+private fun ZoneSaisie(
+    session: SessionRelais,
+    brouillon: String,
+    changer: (String) -> Unit,
+    pieces: List<PieceJointe>,
+    retirerPiece: (Int) -> Unit,
+    collerPieces: () -> Unit,
+    parcourirPieces: () -> Unit,
+    envoyer: () -> Unit,
+) {
     val active = session.etat != SessionRelais.ERREUR
-    Row(
-        Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.Bottom,
-        horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
-    ) {
-        OutlinedTextField(
-            value = brouillon,
-            onValueChange = changer,
-            enabled = active,
-            placeholder = { Text(stringResource(Res.string.message_indice)) },
-            maxLines = 8,
-            modifier = Modifier.weight(1f).widthIn(max = 820.dp).toucheEnvoi(envoyer),
-        )
-        Infobulle(stringResource(Res.string.envoyer)) {
-            FilledIconButton(onClick = envoyer, enabled = active && brouillon.isNotBlank()) {
-                Icon(painterResource(Res.drawable.baseline_send_24), stringResource(Res.string.envoyer))
+    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        BarrePieces(pieces, retirerPiece, Modifier.padding(start = 52.dp))
+        Row(
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
+        ) {
+            Infobulle(stringResource(Res.string.joindre)) {
+                IconButton(onClick = parcourirPieces, enabled = active) {
+                    Icon(painterResource(Res.drawable.baseline_attach_file_24), stringResource(Res.string.joindre))
+                }
+            }
+            OutlinedTextField(
+                value = brouillon,
+                onValueChange = changer,
+                enabled = active,
+                placeholder = { Text(stringResource(Res.string.message_indice)) },
+                maxLines = 8,
+                modifier = Modifier.weight(1f).widthIn(max = 820.dp).collerPieces(collerPieces).toucheEnvoi(envoyer),
+            )
+            Infobulle(stringResource(Res.string.envoyer)) {
+                FilledIconButton(onClick = envoyer, enabled = active && (brouillon.isNotBlank() || pieces.isNotEmpty())) {
+                    Icon(painterResource(Res.drawable.baseline_send_24), stringResource(Res.string.envoyer))
+                }
             }
         }
     }

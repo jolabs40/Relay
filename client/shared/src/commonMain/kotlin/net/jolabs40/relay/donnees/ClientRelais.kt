@@ -28,6 +28,7 @@ import net.jolabs40.relay.protocole.MessageRelais
 import net.jolabs40.relay.protocole.Projet
 import net.jolabs40.relay.protocole.SessionPassee
 import net.jolabs40.relay.protocole.SessionRelais
+import net.jolabs40.relay.protocole.VERSION_PROTOCOLE
 import net.jolabs40.relay.protocole.decoderMessage
 
 /** Où joindre le relais. Sur Windows, lu dans `%APPDATA%\Relay` ; sur Android, saisi à l'appairage. */
@@ -58,6 +59,10 @@ class ClientRelais(
 
     private val _sessions = MutableStateFlow<Map<String, SessionRelais>>(emptyMap())
     val sessions: StateFlow<Map<String, SessionRelais>> = _sessions.asStateFlow()
+
+    /** Version du protocole annoncée par le relais : plus ancienne que la nôtre, il faut le relancer. */
+    private val _versionRelais = MutableStateFlow(VERSION_PROTOCOLE)
+    val versionRelais: StateFlow<Int> = _versionRelais.asStateFlow()
 
     private val _projets = MutableStateFlow<List<Projet>>(emptyList())
     val projets: StateFlow<List<Projet>> = _projets.asStateFlow()
@@ -120,6 +125,7 @@ class ClientRelais(
     internal fun recevoir(brut: String) {
         when (val message = decoderMessage(brut)) {
             is MessageRelais.Bonjour -> {
+                _versionRelais.value = message.version
                 _projets.value = message.projets
                 if (message.modes.isNotEmpty()) _modes.value = message.modes
                 _sessions.value = message.sessions.associateBy { it.id }

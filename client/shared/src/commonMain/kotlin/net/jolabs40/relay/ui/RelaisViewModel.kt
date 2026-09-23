@@ -2,7 +2,10 @@ package net.jolabs40.relay.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,9 +17,13 @@ import kotlinx.serialization.json.JsonObject
 import net.jolabs40.relay.donnees.ClientRelais
 import net.jolabs40.relay.donnees.EtatConnexion
 import net.jolabs40.relay.protocole.Commandes
+import net.jolabs40.relay.protocole.PieceJointe
 import net.jolabs40.relay.protocole.Projet
 import net.jolabs40.relay.protocole.SessionPassee
 import net.jolabs40.relay.protocole.SessionRelais
+import net.jolabs40.relay.ui.pieces.PiecesLues
+import net.jolabs40.relay.ui.pieces.choisirFichiers
+import net.jolabs40.relay.ui.pieces.lirePressePapier
 
 /** Ce qu'occupe le volet principal. */
 sealed interface Volet {
@@ -48,11 +55,20 @@ class RelaisViewModel(private val client: ClientRelais) : ViewModel() {
     private val _brouillons = MutableStateFlow<Map<String, String>>(emptyMap())
     val brouillons: StateFlow<Map<String, String>> = _brouillons.asStateFlow()
 
+    /** Pièces prêtes à partir, par session ; [CLE_NOUVELLE] pour la session pas encore créée. */
+    private val _pieces = MutableStateFlow<Map<String, List<PieceJointe>>>(emptyMap())
+    val pieces: StateFlow<Map<String, List<PieceJointe>>> = _pieces.asStateFlow()
+
+    /** Noms des fichiers qui n'ont pas pu être joints (illisibles, trop lourds). */
+    private val _refus = MutableSharedFlow<List<String>>(extraBufferCapacity = 4)
+    val refus: SharedFlow<List<String>> = _refus.asSharedFlow()
+
     /** Vrai entre l'envoi d'une nouvelle session et son apparition : on l'ouvrira dès qu'elle arrive. */
     private var nouvelleEnCours = false
     private var connues: Set<String> = emptySet()
 
     val erreurs = client.erreurs
+    val versionRelais = client.versionRelais
     val alertes = client.alertes
 
     val etat: StateFlow<EtatRelaisUi> = combine(
@@ -102,6 +118,23 @@ class RelaisViewModel(private val client: ClientRelais) : ViewModel() {
         historique(projet)
     }
 
+    fun ajouterPieces(cle: String, lues: PiecesLues) {
+        if (lues.pieces.isNotEmpty()) _pieces.update { it + (cle to it[cle].orEmpty() + lues.pieces) }
+        if (lues.refusees.isNotEmpty()) _refus.tryEmit(lues.refusees)
+    }
+
+    fun retirerPiece(cle: String, index: Int) {
+        _pieces.update { toutes -> toutes + (cle to toutes[cle].orEmpty().filterIndexed { i, _ -> i != index }) }
+    }
+
+    fun collerPieces(cle: String) {
+        viewModelScope.launch { ajouterPieces(cle, lirePressePapier()) }
+    }
+
+    fun parcourirPieces(cle: String) {
+        viewModelScope.launch { ajouterPieces(cle, choisirFichiers()) }
+    }
+
     fun brouillon(session: String, texte: String) {
         _brouillons.update { it + (session to texte) }
     }
@@ -112,15 +145,22 @@ class RelaisViewModel(private val client: ClientRelais) : ViewModel() {
 
     fun nouvelleSession(projet: Projet, prompt: String, mode: String, reprendre: String?) {
         nouvelleEnCours = true
-        envoyer(Commandes.nouvelle(projet.chemin, prompt.trim(), mode, reprendre))
+        val jointes = _pieces.value[CLE_NOUVELLE].orEmpty()
+        envoyer(Commandes.nouvelle(projet.chemin, prompt.trim(), mode, reprendre, jointes)) {
+            _pieces.update { it - CLE_NOUVELLE }
+        }
     }
 
     fun historique(projet: Projet) = envoyer(Commandes.historique(projet.chemin))
 
     fun envoyerPrompt(session: String) {
         val texte = _brouillons.value[session].orEmpty().trim()
-        if (texte.isEmpty()) return
-        envoyer(Commandes.envoyer(session, texte)) { _brouillons.update { it - session } }
+        val jointes = _pieces.value[session].orEmpty()
+        if (texte.isEmpty() && jointes.isEmpty()) return
+        envoyer(Commandes.envoyer(session, texte, jointes)) {
+            _brouillons.update { it - session }
+            _pieces.update { it - session }
+        }
     }
 
     fun repondreQuestions(session: String, demande: String, reponses: Map<String, String>) =
@@ -139,4 +179,8 @@ class RelaisViewModel(private val client: ClientRelais) : ViewModel() {
     fun fermer(session: String) = envoyer(Commandes.fermer(session))
 
     fun arreterRelais() = envoyer(Commandes.arreter())
+
+    companion object {
+        const val CLE_NOUVELLE = ""
+    }
 }

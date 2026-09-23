@@ -52,7 +52,9 @@ import com.mikepenz.markdown.m3.markdownTypography
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import net.jolabs40.relay.protocole.Evenement
+import net.jolabs40.relay.protocole.PieceAffichee
 import net.jolabs40.relay.protocole.Question
+import net.jolabs40.relay.ui.pieces.PiecesDuFil
 import net.jolabs40.relay.protocole.texte
 import net.jolabs40.relay.ressources.Res
 import net.jolabs40.relay.ressources.annule
@@ -105,7 +107,7 @@ private val LARGEUR_MAX = 820.dp
 @Composable
 fun CarteEvenement(evenement: Evenement, actions: ActionsCartes) {
     when (evenement.type) {
-        Evenement.PROMPT -> BullePrompt(evenement.texte.orEmpty())
+        Evenement.PROMPT -> BullePrompt(evenement.texte.orEmpty(), evenement.pieces)
         Evenement.QUESTION -> CarteQuestion(evenement, actions)
         Evenement.PERMISSION -> CartePermission(evenement, actions)
         Evenement.PLAN -> CartePlan(evenement, actions)
@@ -186,9 +188,14 @@ private fun JsonObject?.annulation(): String? = this?.texte("annule")
 // ---------------------------------------------------------------------------- prompt
 
 @Composable
-private fun BullePrompt(texte: String) {
-    Row(Modifier.widthIn(max = LARGEUR_MAX).fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-        Surface(
+private fun BullePrompt(texte: String, pieces: List<PieceAffichee>) {
+    Column(
+        Modifier.widthIn(max = LARGEUR_MAX).fillMaxWidth(),
+        horizontalAlignment = Alignment.End,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        PiecesDuFil(pieces, Modifier.widthIn(max = 620.dp))
+        if (texte.isNotBlank()) Surface(
             color = MaterialTheme.colorScheme.primaryContainer,
             shape = RoundedCornerShape(16.dp, 16.dp, 4.dp, 16.dp),
             modifier = Modifier.widthIn(max = 620.dp),

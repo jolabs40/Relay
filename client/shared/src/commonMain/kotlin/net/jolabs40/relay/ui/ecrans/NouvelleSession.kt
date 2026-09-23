@@ -31,7 +31,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.material3.OutlinedButton
+import net.jolabs40.relay.protocole.PieceJointe
 import net.jolabs40.relay.protocole.Projet
+import net.jolabs40.relay.ressources.baseline_attach_file_24
+import net.jolabs40.relay.ressources.joindre
+import net.jolabs40.relay.ui.pieces.BarrePieces
+import net.jolabs40.relay.ui.pieces.collerPieces
 import net.jolabs40.relay.protocole.SessionPassee
 import net.jolabs40.relay.ressources.Res
 import net.jolabs40.relay.ressources.baseline_folder_open_24
@@ -61,6 +67,10 @@ fun NouvelleSession(
     projet: Projet?,
     modes: List<String>,
     historiques: Map<String, List<SessionPassee>>,
+    pieces: List<PieceJointe>,
+    retirerPiece: (Int) -> Unit,
+    collerPieces: () -> Unit,
+    parcourirPieces: () -> Unit,
     demarrer: (Projet, String, String, String?) -> Unit,
     connecte: Boolean,
     modifier: Modifier = Modifier,
@@ -70,7 +80,7 @@ fun NouvelleSession(
     var prompt by rememberSaveable { mutableStateOf("") }
 
     val choisi = projet
-    val peutDemarrer = connecte && choisi != null && (prompt.isNotBlank() || reprendre != null)
+    val peutDemarrer = connecte && choisi != null && (prompt.isNotBlank() || pieces.isNotEmpty() || reprendre != null)
     val lancer = { if (peutDemarrer) demarrer(choisi!!, prompt, mode, reprendre) }
 
     Row(modifier.fillMaxSize().padding(24.dp), horizontalArrangement = Arrangement.Center) {
@@ -113,9 +123,16 @@ fun NouvelleSession(
                 supportingText = { Text(stringResource(Res.string.raccourci_envoi)) },
                 minLines = 4,
                 maxLines = 12,
-                modifier = Modifier.fillMaxWidth().toucheEnvoi(lancer),
+                modifier = Modifier.fillMaxWidth().collerPieces(collerPieces).toucheEnvoi(lancer),
             )
-            Button(onClick = lancer, enabled = peutDemarrer) { Text(stringResource(Res.string.demarrer)) }
+            BarrePieces(pieces, retirerPiece)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Button(onClick = lancer, enabled = peutDemarrer) { Text(stringResource(Res.string.demarrer)) }
+                OutlinedButton(onClick = parcourirPieces) {
+                    Icon(painterResource(Res.drawable.baseline_attach_file_24), null, Modifier.size(18.dp))
+                    Text(stringResource(Res.string.joindre), Modifier.padding(start = 6.dp))
+                }
+            }
         }
     }
 }

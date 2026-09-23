@@ -41,7 +41,10 @@ class FauxClient:
         return False
 
     async def query(self, prompt):
-        self.prompt = prompt
+        if isinstance(prompt, str):
+            self.prompt = prompt
+        else:  # flux de messages à blocs (images)
+            self.prompt = [message async for message in prompt]
 
     async def receive_response(self):
         for nom, entree in self.scenario:
@@ -245,3 +248,67 @@ def test_serveur_bout_en_bout(tmp_path):
             assert fermee == {"type": "session_fermee", "id": question[0]}
         tache.cancel()
     lancer(scenario())
+
+
+# ---------------------------------------------------------------------- pièces jointes
+
+import base64
+
+
+def _b64(octets: bytes) -> str:
+    return base64.b64encode(octets).decode()
+
+
+def test_image_en_bloc_et_fichier_sur_disque(tmp_path, monkeypatch):
+    monkeypatch.setenv("RELAY_DONNEES", str(tmp_path))
+
+    async def scenario():
+        clients: list = []
+        session = Session("P", ".", "bypassPermissions", lambda s: None, fabrique_client=fabrique([], clients))
+        session.demarrer()
+        session.envoyer("Regarde", [
+            {"nom": "capture.png", "type_mime": "image/png", "donnees": _b64(b"PNG-faux"), "vignette": "dmln"},
+            {"nom": r"..\..\rapport.pdf", "type_mime": "application/pdf", "donnees": _b64(b"%PDF-1.7")},
+        ])
+        await attendre(lambda: session.etat == "inactive" and session.evenements[-1]["type"] == "resultat")
+
+        message = clients[0].prompt[0]["message"]
+        texte, image = message["content"]
+        assert image == {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": _b64(b"PNG-faux")}}
+        # Le nom est réduit à lui-même : aucune sortie du dossier des pièces.
+        chemin = tmp_path / "pieces" / session.id / "rapport.pdf"
+        assert chemin.read_bytes() == b"%PDF-1.7"
+        assert texte["text"].startswith("Regarde") and str(chemin) in texte["text"]
+
+        # Le fil garde nom, type et vignette — jamais l'image entière.
+        pieces = session.evenements[0]["pieces"]
+        assert [p["nom"] for p in pieces] == ["capture.png", "rapport.pdf"]
+        assert pieces[0]["vignette"] == "dmln" and pieces[1]["vignette"] is None
+        assert "donnees" not in json.dumps(session.instantane())
+        await session.fermer()
+    lancer(scenario())
+
+
+def test_piece_seule_sans_texte(tmp_path, monkeypatch):
+    monkeypatch.setenv("RELAY_DONNEES", str(tmp_path))
+
+    async def scenario():
+        clients: list = []
+        session = Session("P", ".", "default", lambda s: None, fabrique_client=fabrique([], clients))
+        session.demarrer()
+        session.envoyer("", [{"nom": "ecran.png", "type_mime": "image/png", "donnees": _b64(b"x")}])
+        await attendre(lambda: session.evenements[-1]["type"] == "resultat")
+        assert [bloc["type"] for bloc in clients[0].prompt[0]["message"]["content"]] == ["image"]
+        assert session.titre == "ecran.png"
+        await session.fermer()
+    lancer(scenario())
+
+
+def test_piece_illisible_ou_trop_lourde_refusee(tmp_path, monkeypatch):
+    monkeypatch.setenv("RELAY_DONNEES", str(tmp_path))
+    session = Session("P", ".", "default", lambda s: None)
+    with pytest.raises(Exception, match="illisible"):
+        session.envoyer("x", [{"nom": "a.png", "type_mime": "image/png", "donnees": "pas du base64 !"}])
+    with pytest.raises(Exception, match="trop lourde"):
+        session.envoyer("x", [{"nom": "a.png", "type_mime": "image/png", "donnees": _b64(b"0" * (5 * 1024 * 1024 + 1))}])
+    assert session.evenements == []

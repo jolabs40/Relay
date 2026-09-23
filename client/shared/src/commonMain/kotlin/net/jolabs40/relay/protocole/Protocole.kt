@@ -2,6 +2,7 @@ package net.jolabs40.relay.protocole
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -17,7 +18,8 @@ import kotlinx.serialization.json.putJsonObject
  * questions gardent le camelCase de l'outil AskUserQuestion, qu'elles recopient telles quelles.
  */
 
-const val VERSION_PROTOCOLE = 1
+/** 2 : pièces jointes. Un relais plus ancien les ignorerait sans rien dire. */
+const val VERSION_PROTOCOLE = 2
 
 val jsonRelais = Json {
     ignoreUnknownKeys = true
@@ -26,6 +28,35 @@ val jsonRelais = Json {
 
 @Serializable
 data class Projet(val nom: String, val chemin: String)
+
+/**
+ * Une pièce jointe à envoyer : le fichier entier, en base64 — le relais n'a pas forcément accès aux
+ * fichiers du client (téléphone). Les images partent en bloc image, le reste est déposé sur le PC.
+ */
+@Serializable
+data class PieceJointe(
+    val nom: String,
+    @SerialName("type_mime") val typeMime: String,
+    val donnees: String,
+    /** JPEG réduit, en base64 : ce que le fil affichera. Images seulement. */
+    val vignette: String? = null,
+) {
+    val estImage: Boolean get() = typeMime in TYPES_IMAGE
+}
+
+/** Ce que le fil garde d'une pièce envoyée : jamais le fichier lui-même. */
+@Serializable
+data class PieceAffichee(
+    val nom: String,
+    @SerialName("type_mime") val typeMime: String = "",
+    val taille: Long = 0,
+    val vignette: String? = null,
+) {
+    val estImage: Boolean get() = typeMime in TYPES_IMAGE
+}
+
+/** Les formats d'image que Claude lit directement (API Messages). */
+val TYPES_IMAGE = setOf("image/png", "image/jpeg", "image/gif", "image/webp")
 
 @Serializable
 data class OptionQuestion(val label: String, val description: String = "")
@@ -57,6 +88,7 @@ data class Evenement(
     @SerialName("cout_usd") val coutUsd: Double? = null,
     val tours: Int? = null,
     val reponse: JsonObject? = null,
+    val pieces: List<PieceAffichee> = emptyList(),
 ) {
     companion object {
         const val PROMPT = "prompt"
@@ -150,18 +182,21 @@ fun decoderMessage(brut: String): MessageRelais {
 
 /** Les commandes du client, prêtes à envoyer. */
 object Commandes {
-    fun nouvelle(chemin: String, prompt: String, mode: String, reprendre: String?) = buildJsonObject {
-        put("type", "nouvelle")
-        put("chemin", chemin)
-        put("prompt", prompt)
-        put("mode", mode)
-        if (reprendre != null) put("reprendre", reprendre)
-    }
+    fun nouvelle(chemin: String, prompt: String, mode: String, reprendre: String?, pieces: List<PieceJointe> = emptyList()) =
+        buildJsonObject {
+            put("type", "nouvelle")
+            put("chemin", chemin)
+            put("prompt", prompt)
+            put("mode", mode)
+            if (reprendre != null) put("reprendre", reprendre)
+            if (pieces.isNotEmpty()) put("pieces", jsonRelais.encodeToJsonElement(ListSerializer(PieceJointe.serializer()), pieces))
+        }
 
-    fun envoyer(session: String, prompt: String) = buildJsonObject {
+    fun envoyer(session: String, prompt: String, pieces: List<PieceJointe> = emptyList()) = buildJsonObject {
         put("type", "envoyer")
         put("session", session)
         put("prompt", prompt)
+        if (pieces.isNotEmpty()) put("pieces", jsonRelais.encodeToJsonElement(ListSerializer(PieceJointe.serializer()), pieces))
     }
 
     /** Réponse à AskUserQuestion : une valeur par question, les choix multiples joints par « , ». */

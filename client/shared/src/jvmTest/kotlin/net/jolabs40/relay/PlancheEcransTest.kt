@@ -19,7 +19,12 @@ import org.jetbrains.skia.EncodedImageFormat
 import org.junit.Assume.assumeTrue
 import org.junit.Test
 import java.io.File
+import javax.imageio.ImageIO
 import javax.swing.SwingUtilities
+import java.awt.Color
+import java.awt.GradientPaint
+import java.awt.image.BufferedImage
+import net.jolabs40.relay.ui.pieces.lireFichiers
 
 /**
  * Planche des écrans, rendue hors fenêtre à partir de faux messages du relais :
@@ -116,6 +121,36 @@ class PlancheEcransTest {
         capturer(sortie, "4-plan", vm, Volet.Session("l"), sombre = true)
         capturer(sortie, "5-resultat", vm, Volet.Session("r"), sombre = true)
         capturer(sortie, "6-travail", vm, Volet.Session("t"), sombre = false)
+
+        // Pièces jointes : une capture déjà envoyée dans le fil, et deux pièces prêtes à partir.
+        val capture = File(sortie, "capture-exemple.png").also { ImageIO.write(fausseCapture(), "png", it) }
+        val journal = File(sortie, "gradle-build.log").apply { writeText("BUILD FAILED") }
+        val lues = lireFichiers(listOf(capture, journal))
+        val vignette = lues.pieces.first().vignette
+        surFilAwt {
+            client.recevoir(
+                session(
+                    "i", "MeepleTV", "Le plateau déborde", "travaille", "bypassPermissions", "Read PlateauScreen.kt",
+                    """{"id":1,"type":"prompt","texte":"Le plateau déborde à droite sur la TCL, regarde la capture.",
+                        "pieces":[{"nom":"capture.png","type_mime":"image/png","taille":84211,"vignette":"$vignette"},
+                                  {"nom":"logcat.txt","type_mime":"text/plain","taille":5120}]}""",
+                ),
+            )
+            vm.ajouterPieces("i", lues)
+        }
+        capturer(sortie, "7-pieces", vm, Volet.Session("i"), sombre = true)
+    }
+
+    /** Une fausse capture d'écran : un dégradé et quelques cartes, pour que la vignette ait l'air vraie. */
+    private fun fausseCapture(): BufferedImage {
+        val image = BufferedImage(1920, 1080, BufferedImage.TYPE_INT_RGB)
+        val g = image.createGraphics()
+        g.paint = GradientPaint(0f, 0f, Color(24, 40, 72), 1920f, 1080f, Color(90, 40, 110))
+        g.fillRect(0, 0, 1920, 1080)
+        g.color = Color(255, 255, 255, 200)
+        repeat(4) { i -> g.fillRoundRect(120 + i * 460, 300, 400, 480, 40, 40) }
+        g.dispose()
+        return image
     }
 
     private fun capturer(sortie: File, nom: String, vm: RelaisViewModel, volet: Volet, sombre: Boolean) {

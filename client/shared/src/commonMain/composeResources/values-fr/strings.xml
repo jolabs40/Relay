@@ -5,6 +5,7 @@
     <string name="deconnecte">Relais injoignable</string>
     <string name="deconnecte_raison">Relais injoignable : %1$s</string>
     <string name="non_connecte">Pas de connexion au relais</string>
+    <string name="relais_ancien">Le relais tourne dans une version plus ancienne et ignore les pièces jointes. Relance-le : icône de la zone de notification, « Arrêter le relais », puis rouvre Relay. Les sessions ouvertes se reprennent ensuite.</string>
     <string name="erreur_relais">Relais : %1$s</string>
 
     <!-- Liste des sessions -->
@@ -79,6 +80,12 @@
     <string name="details_tour">%1$s · %2$d étapes</string>
     <string name="envoyer_reponse">Envoyer</string>
     <string name="copier">Copier</string>
+
+    <!-- Pièces jointes -->
+    <string name="joindre">Joindre des fichiers</string>
+    <string name="retirer">Retirer</string>
+    <string name="pieces_refusees">Non joint (illisible ou trop lourd) : %1$s</string>
+    <string name="deposer_ici">Déposer pour joindre</string>
 
     <!-- Alertes -->
     <string name="alerte_question">%1$s te pose une question</string>

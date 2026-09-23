@@ -10,8 +10,9 @@ Relais → client
   ``erreur``         {message, ref?}
 
 Client → relais (``ref`` facultatif, renvoyé dans l'erreur éventuelle)
-  ``nouvelle``    {chemin, prompt, mode, reprendre?}
-  ``envoyer``     {session, prompt}
+  ``nouvelle``    {chemin, prompt, mode, reprendre?, pieces?}
+  ``envoyer``     {session, prompt, pieces?}
+                  pieces : [{nom, type_mime, donnees (base64), vignette? (JPEG base64)}]
   ``repondre``    {session, demande, reponse}
   ``interrompre`` {session}
   ``mode``        {session, mode}
@@ -39,7 +40,8 @@ from .session import MODES, ErreurCommande, FabriqueClient, Session
 
 log = logging.getLogger("relay.serveur")
 
-VERSION_PROTOCOLE = 1
+# 2 : pièces jointes (``pieces`` dans ``nouvelle`` et ``envoyer``).
+VERSION_PROTOCOLE = 2
 
 
 class Relais:
@@ -155,13 +157,14 @@ class Relais:
             self.sessions[session.id] = session
             session.demarrer()
             prompt = (commande.get("prompt") or "").strip()
-            if prompt:
-                session.envoyer(prompt)
+            pieces = commande.get("pieces") or []
+            if prompt or pieces:
+                session.envoyer(prompt, pieces)
             else:
                 self._session_changee(session)
             return None
         if type_ == "envoyer":
-            self._session(commande).envoyer(commande["prompt"])
+            self._session(commande).envoyer(commande.get("prompt", ""), commande.get("pieces") or [])
             return None
         if type_ == "repondre":
             self._session(commande).repondre(commande["demande"], commande["reponse"])
@@ -198,7 +201,8 @@ async def servir(relais: Relais, hote: str, port: int, pret: asyncio.Event | Non
         hote,
         port,
         process_request=relais.verifier_requete,
-        max_size=4 * 1024 * 1024,
+        # Les pièces jointes voyagent en base64 dans la commande : jusqu'à quelques fichiers de 20 Mo.
+        max_size=64 * 1024 * 1024,
     ) as serveur:
         if pret:
             pret.set()

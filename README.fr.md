@@ -24,6 +24,11 @@ a besoin de vous.
 | **Plan** | en mode *Planifier d'abord*, Claude soumet son plan | approuver et choisir comment l'exécuter, ou demander des changements |
 | **Compte rendu** | un tour se termine | le lire (Markdown), puis répondre ou donner la consigne suivante |
 
+**Pièces jointes**, comme dans le terminal : collez une capture ou des fichiers copiés avec
+**Ctrl+V**, déposez des fichiers sur la fenêtre, ou passez par le trombone. Les images sont montrées
+directement à Claude (réduites à ce qu'il lit) ; les autres fichiers — journaux, PDF, code — lui sont
+remis pour qu'il les lise.
+
 Quatre modes, modifiables à tout moment : *Demander avant d'agir*, *Accepter les modifications*,
 *Planifier d'abord*, *Autonomie complète*. Les questions vous parviennent même en *Autonomie
 complète*.

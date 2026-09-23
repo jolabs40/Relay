@@ -23,6 +23,10 @@ service, so closing the window stops nothing: you get a Windows notification whe
 | **Plan** | in *Plan first* mode, Claude submits its plan | approve and choose how to run it, or request changes |
 | **Summary** | a turn ends | read it (Markdown), then answer or give the next instruction |
 
+**Attachments**, as in the terminal: paste a screenshot or copied files with **Ctrl+V**, drop files
+on the window, or use the paperclip. Images are shown to Claude directly (scaled down to what it
+reads); other files — logs, PDFs, code — are handed over for Claude to read.
+
 Four modes, switchable at any time: *Ask before acting*, *Accept edits*, *Plan first*, *Full
 autonomy*. Questions still reach you in *Full autonomy*.
 
